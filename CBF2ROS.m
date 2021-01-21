@@ -10,10 +10,11 @@ global l
 global phi
 global DATASIZE
 
-DEBUG_STEP = 1200*1;
+DEBUG_STEP = 1200*0.5;
 DEBUG_LOG_U = zeros(2, DEBUG_STEP);
 DEBUG_LOG_U_CTR = zeros(2, DEBUG_STEP);
 DEBUG_LOG_DESIRE = zeros(2, DEBUG_STEP);
+DEBUG_LOG_MIN_L  = zeros(1, DEBUG_STEP);
 
 detection_flg = false;
 subscribe_flg1 = false;
@@ -33,7 +34,7 @@ u = [0; 0];
 delta = 0.4;
 minDis = 0.05;
 
-k_1 = 0.4;
+k_1 = 0.8;
 k_2 = 0.3;
 
 x_d_bfr = 0;
@@ -100,6 +101,7 @@ for i=1:DEBUG_STEP
         DEBUG_LOG_U(:, i) = u;
         DEBUG_LOG_U_CTR(:, i) = u_ctr;
         DEBUG_LOG_DESIRE(:, i) = [x_d_lcl; y_d_lcl];
+        DEBUG_LOG_MIN_L(1, i)  = min(l);
     end
     waitfor(rate);
 end
@@ -112,7 +114,7 @@ u_current = u;
 rosshutdown
 
 function [c, ceq] = u_norm(x)
-    alpha = 0.4;
+    alpha = 1;
     c = vecnorm(x)-alpha;
     ceq = [];
 end
