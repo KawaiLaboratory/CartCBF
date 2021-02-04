@@ -34,16 +34,17 @@ u = [0; 0];
 delta = 0.4;
 minDis = 0.05;
 
-k_1 = 0.8;
-k_2 = 0.3;
+k_1 = 1;
+k_2 = 0.2;
 
 x_d_bfr = 0;
 y_d_bfr = 0;
 
 x_d_lcl = 0;
 y_d_lcl = 0;
+cnt = 0;
 
-options = optimoptions("fmincon","Algorithm", "sqp", "UseParallel", true, "Display", "off", "StepTolerance", 0.01, "OptimalityTolerance", 0.01, "ConstraintTolerance", 0.001);
+options = optimoptions("fmincon","Algorithm", "sqp", "UseParallel", true, "Display", "off", "OptimalityTolerance", 0.001, "ConstraintTolerance", 0.001);
 
 rosinit("169.254.15.238", 11311);
 
@@ -72,9 +73,13 @@ for i=1:DEBUG_STEP
         b(:, 1) = b_obj;
         
         if(detection_flg) % 非検出
-            x_d_lcl = x_d_bfr;
-            y_d_lcl = y_d_bfr;
+            l_d_bfr = sqrt(x_d_bfr^2+y_d_bfr^2);
+            [l_d_tilde, id] = min(vecnorm(l-l_d_bfr, 2, 2));
+            x_d_lcl = l_d_tilde*cos(phi(id));
+            y_d_lcl = l_d_tilde*sin(phi(id));
+            cnt = cnt+1;
         else
+            cnt = 0;
             x_d_bfr = x_d;
             y_d_bfr = y_d;
             x_d_lcl = x_d;
@@ -91,10 +96,14 @@ for i=1:DEBUG_STEP
         lb  = [];
         ub  = [];
         nonlcon = @u_norm;
-
-        u = fmincon(fun, u_current, A, b, Aeq, beq, lb, ub, nonlcon, options);
-
-        msg.Data = u;
+        
+        if(cnt > 60)
+            u = [0 0]';
+        else
+            u = fmincon(fun, u_current, A, b, Aeq, beq, lb, ub, nonlcon, options); 
+        end
+        
+        msg.Data = u_ctr;
         send(u_pub, msg);
         u_current = u;
 
@@ -114,7 +123,7 @@ u_current = u;
 rosshutdown
 
 function [c, ceq] = u_norm(x)
-    alpha = 1;
+    alpha = 1.5;
     c = vecnorm(x)-alpha;
     ceq = [];
 end
